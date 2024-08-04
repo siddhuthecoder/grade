@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Results</title>
+    <style>
+    
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        #controls {
+            margin-bottom: 20px;
+        }
+        #studentInfo {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #studentInfo div {
+            margin-bottom: 10px;
+        }
+        #studentPhoto {
+            margin-top: 20px;
+        }
+        #studentGrades {
+            margin-top: 20px;
+            width: 50%;
+        }
+        #studentGrades th, #studentGrades td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+        #studentGrades th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <button onclick="showRanks()">Show Ranks</button>
+        <button onclick="searchForRank()">Search for a Rank</button>
+        <input type="number" id="rankInput" placeholder="Enter rank" style="display: none;">
+        <button id="rankSearchBtn" onclick="displayRank()" style="display: none;">Search</button>
+        <br><br>
+        <button onclick="searchForStudentGrade()">Search for a Student Grade</button>
+        <input type="text" id="studentIdInput" placeholder="Enter Student ID" style="display: none;">
+        <button id="studentSearchBtn" onclick="displayStudentGrade()" style="display: none;">Search</button>
+    </div>
+    <table id="resultsTable"></table>
+    <div id="studentInfo"></div>
+    <div id="studentPhoto"></div>
+    <table id="studentGrades"></table>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <script>
+        let jsonData = [];
+
+        function loadExcel() {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', 'student_results (3).xlsx', true);
+            xhr.responseType = 'arraybuffer';
+
+            xhr.onload = function(e) {
+                if (xhr.status === 200) {
+                    const data = new Uint8Array(xhr.response);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                }
+            };
+
+            xhr.send();
+        }
+
+        function showRanks() {
+            const table = document.getElementById('resultsTable');
+            table.innerHTML = '';
+            const headers = ["Rank", "Student ID", "CGPA"];
+            const tr = document.createElement('tr');
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                tr.appendChild(th);
+            });
+            table.appendChild(tr);
+
+            jsonData.slice(1).forEach((row, index) => {
+                const tr = document.createElement('tr');
+                const rankTd = document.createElement('td');
+                rankTd.textContent = index + 1;
+                tr.appendChild(rankTd);
+                const idTd = document.createElement('td');
+                idTd.textContent = row[0];
+                tr.appendChild(idTd);
+                const cgpaTd = document.createElement('td');
+                cgpaTd.textContent = row[row.length - 1];
+                tr.appendChild(cgpaTd);
+                table.appendChild(tr);
+            });
+        }
+
+        function searchForRank() {
+            document.getElementById('rankInput').style.display = 'inline';
+            document.getElementById('rankSearchBtn').style.display = 'inline';
+        }
+
+        function displayRank() {
+            const rank = document.getElementById('rankInput').value;
+            if (rank > 0 && rank <= jsonData.length - 1) {
+                const studentData = jsonData[rank];
+                const studentId = studentData[0];
+                const cgpa = studentData[studentData.length - 1];
+
+                const studentInfoDiv = document.getElementById('studentInfo');
+                studentInfoDiv.innerHTML = `
+                    <div>Rank: ${rank}</div>
+                    <div>Student ID: ${studentId}</div>
+                    <div>CGPA: ${cgpa}</div>
+                `;
+
+                const photoDiv = document.getElementById('studentPhoto');
+                photoDiv.innerHTML = '';
+                const img = document.createElement('img');
+                img.src = `https://intranet.rguktn.ac.in/SMS/usrphotos/user/${studentId}.jpg`;
+                img.alt = `Photo of ${studentId}`;
+                img.width = 150;
+                img.height = 150;
+                photoDiv.appendChild(img);
+
+                const gradesTable = document.getElementById('studentGrades');
+                gradesTable.innerHTML = '<tr><th>Subject</th><th>Grade</th></tr>';
+                // Display grades for the first 8 subjects only
+                for (let i = 1; i <= 8; i++) {
+                    const tr = document.createElement('tr');
+                    const subjectTd = document.createElement('td');
+                    subjectTd.textContent = `Subject ${i}`;
+                    const gradeTd = document.createElement('td');
+                    gradeTd.textContent = studentData[i+1];
+                    tr.appendChild(subjectTd);
+                    tr.appendChild(gradeTd);
+                    gradesTable.appendChild(tr);
+                }
+            } else {
+                alert('Invalid rank');
+            }
+        }
+
+        function searchForStudentGrade() {
+            document.getElementById('studentIdInput').style.display = 'inline';
+            document.getElementById('studentSearchBtn').style.display = 'inline';
+        }
+
+        function displayStudentGrade() {
+            const studentId = document.getElementById('studentIdInput').value;
+            const studentIndex = jsonData.findIndex(row => row[0] === studentId);
+            if (studentIndex !== -1) {
+                const studentData = jsonData[studentIndex];
+                const rank = studentIndex;
+                const cgpa = studentData[studentData.length - 1];
+
+                const studentInfoDiv = document.getElementById('studentInfo');
+                studentInfoDiv.innerHTML = `
+                    <div>Rank: ${rank}</div>
+                    <div>Student ID: ${studentId}</div>
+                    <div>CGPA: ${cgpa}</div>
+                `;
+
+                const photoDiv = document.getElementById('studentPhoto');
+                photoDiv.innerHTML = '';
+                const img = document.createElement('img');
+                img.src = `https://intranet.rguktn.ac.in/SMS/usrphotos/user/${studentId}.jpg`;
+                img.alt = `Photo of ${studentId}`;
+                img.width = 150;
+                img.height = 150;
+                photoDiv.appendChild(img);
+
+                const gradesTable = document.getElementById('studentGrades');
+                gradesTable.innerHTML = '<tr><th>Subject</th><th>Grade</th></tr>';
+                // Display grades for the first 8 subjects only
+                for (let i = 1; i <= 8; i++) {
+                    const tr = document.createElement('tr');
+                    const subjectTd = document.createElement('td');
+                    subjectTd.textContent = `Subject ${i}`;
+                    const gradeTd = document.createElement('td');
+                    gradeTd.textContent = studentData[i+1];
+                    tr.appendChild(subjectTd);
+                    tr.appendChild(gradeTd);
+                    gradesTable.appendChild(tr);
+                }
+            } else {
+                alert('Student ID not found');
+            }
+        }
+
+        // Load the Excel file on page load
+        window.onload = loadExcel;
+    </script>
+</body>
+</html>
