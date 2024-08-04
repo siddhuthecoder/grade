@@ -177,11 +177,14 @@
         }
 
         function searchForRank() {
+            const table = document.getElementById('resultsTable');
+            table.innerHTML = '';
             document.getElementById('rankInput').style.display = 'inline';
             document.getElementById('rankSearchBtn').style.display = 'inline';
         }
 
         function displayRank() {
+           
             const rank = document.getElementById('rankInput').value;
             if (rank > 0 && rank <= jsonData.length - 1) {
                 const studentData = jsonData[rank];
@@ -223,6 +226,8 @@
         }
 
         function searchForStudentGrade() {
+            const table = document.getElementById('resultsTable');
+            table.innerHTML = '';
             document.getElementById('studentIdInput').style.display = 'inline';
             document.getElementById('studentSearchBtn').style.display = 'inline';
         }
